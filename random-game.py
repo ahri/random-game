@@ -6,6 +6,39 @@ from random import randint
 from _winreg import ConnectRegistry, OpenKey, CloseKey, EnumValue, HKEY_LOCAL_MACHINE
 
 
+class History(object):
+
+    reset_string = '----- RESET -----'
+
+    @classmethod
+    def config(cls):
+        return r"%s\game_history.txt" % os.environ['USERPROFILE']
+
+    @classmethod
+    def record(cls, game):
+        open(cls.config(), 'a').write("%s\n" % game)
+
+    @classmethod
+    def recent(cls):
+        games = []
+        try:
+            for game in open(cls.config(), 'r').readlines():
+                game = game.strip()
+                if game == cls.reset_string:
+                    games = []
+                    continue
+
+                games.append(game)
+        except IOError:
+            pass
+
+        return games
+
+    @classmethod
+    def reset(cls):
+        cls.record(cls.reset_string)
+
+
 class UserSpecified(object):
 
     @classmethod
@@ -39,7 +72,7 @@ class Steam(object):
         i = 0
         while True:
             k, v, _ = EnumValue(steam_reg, i)
-            
+
             if k == 'InstallPath':
                 steam_install_path = v
                 break
@@ -104,7 +137,19 @@ if len(games) == 0:
     print "ERROR: No games found: install Steam or add exes to %s" % UserSpecified.config()
     sys.exit(1)
 
+history = History.recent()
+print history
+not_recently_played = filter(lambda g: g not in history, games)
+
+print not_recently_played
+
+if len(not_recently_played) == 0:
+    History.reset()
+else:
+    games = not_recently_played
+
 selected = games[randint(0, len(games)-1)]
+History.record(selected)
 
 if re.match("^[0-9]+$", selected):
     print "Displaying Steam game %s" % selected
