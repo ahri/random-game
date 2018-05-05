@@ -14,7 +14,6 @@
 {-# LANGUAGE CPP                                                      #-}
 
 import             System.Directory
-import             System.Environment
 import             System.Exit
 import             System.IO
 import             System.Process
@@ -24,6 +23,8 @@ import             Text.Regex
 #ifdef mingw32_HOST_OS
 import             Control.Exception
 import             System.Win32.Registry
+#else
+import             System.Environment
 #endif
 
 newtype SteamDir = SteamDir FilePath deriving (Show, Eq)
@@ -83,7 +84,7 @@ steamProcess :: SteamDir -> [String] -> CreateProcess
 #ifdef mingw32_HOST_OS
 steamProcess (SteamDir sd) params = proc
     (sd ++ "/Steam.exe")
-    ["steam://nav/games/details/" ++ appId]
+    params
 #else
 steamProcess _ params = proc
     "/bin/bash"
